@@ -44,25 +44,7 @@
           "
           placeholder="Name"
         />
-        <button
-          @click.prevent="onSaveClick"
-          class="bg-green-200 p-1 active:bg-green-400"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-gray-700"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-            />
-          </svg>
-        </button>
+        <BaseButton @click.prevent="onSaveClick" type="save" />
       </div>
       <div
         v-for="item in items"
@@ -80,38 +62,8 @@
       >
         <p v-html="item.name"></p>
         <div>
-          <button class="bg-yellow-200 p-1 active:bg-yellow-400 mr-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-gray-700"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-              />
-            </svg>
-          </button>
-          <button class="bg-red-200 p-1 active:bg-red-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-gray-700"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          <BaseButton @click.prevent="onLoadClick(item.name)" type="load" />
+          <BaseButton @click.prevent="onDeleteClick(item.name)" type="delete" />
         </div>
       </div>
     </div>
@@ -126,6 +78,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import plantuml from "plantuml-encoder";
+import BaseButton from "./components/BaseButton.vue";
 
 const KEY = "plantuml-ui_saves";
 
@@ -138,35 +91,54 @@ const url = computed(
   () => `http://localhost:8199/plantuml/png/${encoded.value}`
 );
 
-const loadItems = () => {
-  if (localStorage.getItem(KEY)) {
-    const parsed = JSON.parse(localStorage.getItem(KEY));
-    items.value = parsed;
-  }
-};
-
 onMounted(() => {
   loadItems();
 });
 
-const onSaveClick = () => {
-  if (localStorage.getItem(KEY)) {
-    const parsed = JSON.parse(localStorage.getItem(KEY));
-    localStorage.setItem(
-      KEY,
-      JSON.stringify([
-        ...parsed,
-        { name: currentName.value, save: encoded.value, date: Date.now() },
-      ])
-    );
-  } else {
-    localStorage.setItem(
-      KEY,
-      JSON.stringify([
-        { name: currentName.value, save: encoded.value, date: Date.now() },
-      ])
-    );
+const loadItems = () => {
+  if (localStorage[KEY]) {
+    const parsed = JSON.parse(localStorage[KEY]);
+    items.value = parsed;
   }
-  loadItems();
+};
+
+const saveItems = () => {
+  localStorage[KEY] = JSON.stringify(items.value);
+};
+
+const onSaveClick = () => {
+  const newUml = {
+    name: currentName.value,
+    save: encoded.value,
+    date: Date.now(),
+  };
+  let changed = false;
+  let toSave = items.value.map((item) => {
+    if (item.name === currentName.value) {
+      changed = true;
+      return newUml;
+    }
+    return item;
+  });
+  if (!changed) {
+    toSave.push(newUml);
+  }
+
+  items.value = toSave;
+
+  saveItems();
+};
+
+const onDeleteClick = (nameToDelete) => {
+  items.value = items.value.filter((item) => item.name !== nameToDelete);
+  saveItems();
+};
+
+const onLoadClick = (nameToLoad) => {
+  const { name, save } = items.value.filter(
+    (item) => item.name === nameToLoad
+  )[0];
+  currentName.value = name;
+  uml.value = plantuml.decode(save);
 };
 </script>

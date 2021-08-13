@@ -1,24 +1,18 @@
-# plantuml-ui
+# Plantuml UI
 
-## Project setup
-```
-npm install
-```
+## Start server
 
-### Compiles and hot-reloads for development
 ```
-npm run serve
+java -jar plantuml.jar -picoweb:8199
 ```
 
-### Compiles and minifies for production
+## Start client
+
 ```
-npm run build
+docker build -t tapoch/plantuml-ui .
+docker run -it -p 8080:8080 --rm --name plantuml-ui tapoch/plantuml-ui
 ```
 
-### Lints and fixes files
-```
-npm run lint
-```
+### Plantuml docs
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+[plantuml.com](https://plantuml.com/ru/sequence-diagram)
